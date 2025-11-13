@@ -207,8 +207,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
     // Kontrol Kamera
     controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
+    // Disable damping so camera drag stops immediately (not slidey)
+    controls.enableDamping = false;
+    controls.dampingFactor = 0.0;
     controls.screenSpacePanning = false;
     controls.minDistance = 5;
     controls.maxDistance = 50;

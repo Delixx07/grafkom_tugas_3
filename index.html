@@ -7,7 +7,7 @@
     <style>
       body {
         margin: 0;
-        overflow: hidden;
+        overflow: hidden; /* scene stays full screen; UI scrolls internally */
         background: linear-gradient(
           135deg,
           #0a0a0a 0%,
@@ -34,12 +34,29 @@
         left: 20px;
         background: rgba(15, 15, 35, 0.85);
         backdrop-filter: blur(10px);
-        padding: 20px;
-        border-radius: 15px;
-        width: 280px;
+        padding: 14px 14px 12px;
+        border-radius: 12px;
+        width: min(420px, 92vw);
+        max-height: calc(100vh - 40px); /* keep within viewport */
+        overflow-y: auto; /* scroll inside panel when content is tall */
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        transition: all 0.3s ease;
+        transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        scrollbar-width: thin; /* Firefox */
+      }
+
+      /* Smooth, compact scrollbar for Chromium/WebKit */
+      #ui::-webkit-scrollbar {
+        width: 10px;
+      }
+      #ui::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      #ui::-webkit-scrollbar-thumb {
+        background: rgba(120, 130, 180, 0.35);
+        border-radius: 8px;
+        border: 2px solid transparent;
+        background-clip: padding-box;
       }
 
       #ui:hover {
@@ -84,6 +101,7 @@
       #ui input[type="range"] {
         padding: 0;
         -webkit-appearance: none;
+        appearance: none; /* add standard property for compatibility */
         background: transparent;
         height: 6px;
         border-radius: 3px;
@@ -104,11 +122,11 @@
         border-radius: 50%;
         cursor: pointer;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        transition: all 0.2s ease;
+        transition: background-color 0.15s ease, box-shadow 0.15s ease;
       }
 
+      /* Stable dragging: avoid thumb scaling which can feel "slidey" */
       #ui input[type="range"]::-webkit-slider-thumb:hover {
-        transform: scale(1.2);
         box-shadow: 0 4px 12px rgba(100, 170, 255, 0.6);
       }
 
@@ -130,14 +148,14 @@
 
       #ui button {
         display: block;
-        margin: 12px 0;
+        margin: 8px 0;
         padding: 12px;
         background: linear-gradient(135deg, #4477cc 0%, #5588dd 100%);
         border: none;
         color: white;
         cursor: pointer;
         border-radius: 8px;
-        font-size: 1em;
+        font-size: 0.95em;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 1px;
@@ -187,16 +205,53 @@
         border-color: rgba(255, 255, 255, 0.25);
       }
 
-      #ui p {
-        font-family: "Courier New", monospace;
-        font-size: 1.1em;
+      /* Compact info chips and rows */
+      .chips-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .chip {
         background: rgba(30, 30, 60, 0.6);
-        padding: 10px;
+        padding: 8px 10px;
         border-radius: 8px;
-        margin: 15px 0;
         border-left: 4px solid #4477cc;
-        text-align: center;
-        font-weight: bold;
+        font-size: 0.9em;
+      }
+
+      .btn-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 8px;
+      }
+
+      .info-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .info-item {
+        background: rgba(30, 30, 60, 0.6);
+        padding: 8px 10px;
+        border-radius: 8px;
+        border-left: 4px solid #5588dd;
+        font-size: 0.9em;
+      }
+
+      .controls-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 12px;
+      }
+      .control label {
+        margin: 6px 0 4px 0 !important;
+        font-size: 0.85em !important;
+      }
+      .control input[type="range"] {
+        margin: 0;
       }
 
       #angleValue,
@@ -204,108 +259,179 @@
         color: #66aaff;
         font-weight: bold;
       }
+
+      /* Responsive tweaks */
+      @media (max-width: 768px) {
+        #ui {
+          left: 12px;
+          top: 12px;
+          width: min(420px, 94vw);
+          border-radius: 12px;
+          padding: 12px 12px 10px;
+          max-height: calc(100vh - 24px);
+        }
+        .controls-grid {
+          grid-template-columns: 1fr;
+        }
+        .btn-row {
+          grid-template-columns: 1fr 1fr;
+        }
+        .chips-row,
+        .info-row {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      @media (max-width: 480px) {
+        #ui {
+          width: 92vw;
+          left: 4vw;
+          right: 4vw;
+        }
+        #ui label {
+          font-size: 0.8em;
+        }
+        #ui button {
+          font-size: 0.9em;
+          padding: 10px;
+        }
+        .controls-grid {
+          grid-template-columns: 1fr;
+        }
+        .chips-row,
+        .info-row {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
   </head>
   <body>
     <div id="ui">
-      <label for="mass"
-        >Massa (kg): <span id="massValue">113.1</span>
-        <button type="button" id="massReset" class="mini-btn">Default</button>
-      </label>
-      <input
-        id="mass"
-        type="range"
-        value="113.1"
-        min="1"
-        max="500"
-        step="0.1"
-      />
+      <div class="controls-grid">
+        <div class="control">
+          <label for="mass"
+            >Massa (kg): <span id="massValue">113.1</span>
+            <button type="button" id="massReset" class="mini-btn">
+              Default
+            </button>
+          </label>
+          <input
+            id="mass"
+            type="range"
+            value="113.1"
+            min="1"
+            max="500"
+            step="0.1"
+          />
+        </div>
 
-      <label for="radius">
-        Jari-jari (m): <span id="radiusValue">0.30</span>
-        <button type="button" id="radiusReset" class="mini-btn">Default</button>
-      </label>
-      <input
-        id="radius"
-        type="range"
-        value="0.30"
-        min="0.05"
-        max="0.60"
-        step="0.01"
-      />
+        <div class="control">
+          <label for="radius"
+            >Jari-jari (m): <span id="radiusValue">0.30</span>
+            <button type="button" id="radiusReset" class="mini-btn">
+              Default
+            </button>
+          </label>
+          <input
+            id="radius"
+            type="range"
+            value="0.30"
+            min="0.05"
+            max="0.60"
+            step="0.01"
+          />
+        </div>
 
-      <label
-        >Kerapatan Objek (kg/m³): <span id="densityValue">1000.0</span></label
-      >
+        <div class="control">
+          <label for="initHeight"
+            >Ketinggian Awal (m): <span id="initHeightValue">2.00</span>
+            <button type="button" id="initHeightReset" class="mini-btn">
+              Default
+            </button>
+          </label>
+          <input
+            id="initHeight"
+            type="range"
+            value="2.00"
+            min="-4.0"
+            max="20.0"
+            step="0.1"
+          />
+        </div>
 
-      <label
-        >Ballistic Coefficient (kg/m²): <span id="bcValue">0.0</span></label
-      >
+        <div class="control">
+          <label for="airDragScale"
+            >Skala Hambatan Udara: <span id="airDragScaleValue">1.00</span>x
+            <button type="button" id="airDragScaleReset" class="mini-btn">
+              Default
+            </button>
+          </label>
+          <input
+            id="airDragScale"
+            type="range"
+            value="1.00"
+            min="0"
+            max="2"
+            step="0.01"
+          />
+        </div>
 
-      <label for="initHeight">
-        Ketinggian Awal (m): <span id="initHeightValue">2.00</span>
-        <button type="button" id="initHeightReset" class="mini-btn">
-          Default
-        </button>
-      </label>
-      <input
-        id="initHeight"
-        type="range"
-        value="2.00"
-        min="-4.0"
-        max="20.0"
-        step="0.1"
-      />
+        <div class="control">
+          <label for="airBuoyScale"
+            >Skala Gaya Apung Udara: <span id="airBuoyScaleValue">0.00</span>x
+            <button type="button" id="airBuoyScaleReset" class="mini-btn">
+              Default
+            </button>
+          </label>
+          <input
+            id="airBuoyScale"
+            type="range"
+            value="0.00"
+            min="0"
+            max="1"
+            step="0.01"
+          />
+        </div>
 
-      <label for="airDragScale">
-        Skala Hambatan Udara: <span id="airDragScaleValue">1.00</span>x
-        <button type="button" id="airDragScaleReset" class="mini-btn">
-          Default
-        </button>
-      </label>
-      <input
-        id="airDragScale"
-        type="range"
-        value="1.00"
-        min="0"
-        max="2"
-        step="0.01"
-      />
+        <div class="control">
+          <label for="angle"
+            >Sudut Lempar (°): <span id="angleValue">45</span>
+            <button type="button" id="angleReset" class="mini-btn">
+              Default
+            </button>
+          </label>
+          <input id="angle" type="range" value="45" min="0" max="90" />
+        </div>
 
-      <label for="airBuoyScale">
-        Skala Gaya Apung Udara: <span id="airBuoyScaleValue">0.00</span>x
-        <button type="button" id="airBuoyScaleReset" class="mini-btn">
-          Default
-        </button>
-      </label>
-      <input
-        id="airBuoyScale"
-        type="range"
-        value="0.00"
-        min="0"
-        max="1"
-        step="0.01"
-      />
+        <div class="control">
+          <label for="speed"
+            >Kecepatan Awal (m/s): <span id="speedValue">20</span>
+            <button type="button" id="speedReset" class="mini-btn">
+              Default
+            </button>
+          </label>
+          <input id="speed" type="range" value="20" min="1" max="50" />
+        </div>
+      </div>
 
-      <label for="angle">
-        Sudut Lempar (°): <span id="angleValue">45</span>
-        <button type="button" id="angleReset" class="mini-btn">Default</button>
-      </label>
-      <input id="angle" type="range" value="45" min="0" max="90" />
+      <div class="chips-row">
+        <div class="chip">
+          Kerapatan: <span id="densityValue">1000.0</span> kg/m³
+        </div>
+        <div class="chip">BC: <span id="bcValue">0.0</span> kg/m²</div>
+      </div>
 
-      <label for="speed">
-        Kecepatan Awal (m/s): <span id="speedValue">20</span>
-        <button type="button" id="speedReset" class="mini-btn">Default</button>
-      </label>
-      <input id="speed" type="range" value="20" min="1" max="50" />
+      <div class="btn-row">
+        <button id="throwBtn">Lempar!</button>
+        <button id="resetBtn">Reset</button>
+      </div>
 
-      <button id="throwBtn">Lempar!</button>
-      <button id="resetBtn">Reset</button>
-
-      <p id="status">Status: diam</p>
-      <p id="currentSpeedDisplay">
-        Kecepatan Saat Ini: <span id="currentSpeed">0.00</span> m/s
-      </p>
+      <div class="info-row">
+        <div id="status" class="info-item">Status: diam</div>
+        <div id="currentSpeedDisplay" class="info-item">
+          Kecepatan: <span id="currentSpeed">0.00</span> m/s
+        </div>
+      </div>
     </div>
 
     <div id="scene-container"></div>
