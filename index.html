@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulasi Parabola & Hukum Archimedes</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: white;
+    }
+    
+    /* Wadah untuk canvas Three.js */
+    #scene-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+
+    #ui {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(15, 15, 35, 0.85);
+      backdrop-filter: blur(10px);
+      padding: 20px;
+      border-radius: 15px;
+      width: 280px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    #ui:hover {
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    #ui label {
+      display: block;
+      margin: 12px 0 6px 0;
+      font-size: 0.9em;
+      font-weight: 600;
+      color: #a0a0ff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    #ui select, #ui input {
+      display: block;
+      margin: 8px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    #ui select {
+      padding: 10px;
+      background: rgba(30, 30, 60, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: white;
+      font-size: 1em;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    #ui select:hover {
+      background: rgba(40, 40, 80, 0.9);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    #ui input[type="range"] {
+      padding: 0;
+      -webkit-appearance: none;
+      background: transparent;
+      height: 6px;
+      border-radius: 3px;
+      outline: none;
+    }
+
+    #ui input[type="range"]::-webkit-slider-track {
+      background: linear-gradient(90deg, #4477cc 0%, #66aaff 100%);
+      height: 6px;
+      border-radius: 3px;
+    }
+
+    #ui input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      background: #ffffff;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    #ui input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 4px 12px rgba(100, 170, 255, 0.6);
+    }
+
+    #ui input[type="range"]::-moz-range-track {
+      background: linear-gradient(90deg, #4477cc 0%, #66aaff 100%);
+      height: 6px;
+      border-radius: 3px;
+    }
+
+    #ui input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      background: #ffffff;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      border: none;
+    }
+
+    #ui button {
+      display: block;
+      margin: 12px 0;
+      padding: 12px;
+      background: linear-gradient(135deg, #4477cc 0%, #5588dd 100%);
+      border: none;
+      color: white;
+      cursor: pointer;
+      border-radius: 8px;
+      font-size: 1em;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(68, 119, 204, 0.4);
+      width: 100%;
+    }
+
+    #ui button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(68, 119, 204, 0.6);
+      background: linear-gradient(135deg, #5588dd 0%, #66aaff 100%);
+    }
+
+    #ui button:active {
+      transform: translateY(0);
+    }
+
+    #ui button#resetBtn {
+      background: linear-gradient(135deg, #555 0%, #777 100%);
+      box-shadow: 0 4px 15px rgba(85, 85, 85, 0.4);
+    }
+
+    #ui button#resetBtn:hover {
+      background: linear-gradient(135deg, #666 0%, #888 100%);
+      box-shadow: 0 6px 20px rgba(85, 85, 85, 0.6);
+    }
+
+    #ui p {
+      font-family: 'Courier New', monospace;
+      font-size: 1.1em;
+      background: rgba(30, 30, 60, 0.6);
+      padding: 10px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 4px solid #4477cc;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    #angleValue, #speedValue {
+      color: #66aaff;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="ui">
+    <label for="objectSelect">Pilih Benda:</label>
+    <select id="objectSelect">
+      <option value="heavy">Berat (150kg) - Tenggelam</option>
+      <option value="medium" selected>Sedang (113kg) - Melayang</option>
+      <option value="light">Ringan (50kg) - Mengapung</option>
+    </select>
+
+    <label for="angle">Sudut Lempar (°): <span id="angleValue">45</span></label>
+    <input id="angle" type="range" value="45" min="0" max="90" />
+
+    <label for="speed">Kecepatan Awal (m/s): <span id="speedValue">20</span></label>
+    <input id="speed" type="range" value="20" min="1" max="50" />
+
+    <button id="throwBtn">Lempar!</button>
+    <button id="resetBtn">Reset</button>
+
+    <p id="status">Status: diam</p>
+  </div>
+
+  <div id="scene-container"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Water.js"></script>
+  <script src="./main.js"></script>
+
+</body>
+</html>
