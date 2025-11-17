@@ -194,9 +194,10 @@
         position: absolute;
         top: 20px;
         right: 20px;
-        z-index: 10;
+        z-index: 11;
         padding: 8px 12px;
-        background: rgba(80, 80, 120, 0.6);
+        background: rgba(80, 80, 120, 0.85);
+        backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.15);
         color: white;
         border-radius: 8px;
@@ -204,22 +205,121 @@
         font-weight: 600;
         cursor: pointer;
         transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
       }
       #themeToggleBtn:hover {
-        background: rgba(100, 100, 160, 0.8);
+        background: rgba(100, 100, 160, 0.9);
         border-color: rgba(255, 255, 255, 0.25);
       }
       /* ********************************** */
 
+      /* *** CSS UNTUK TOMBOL TOGGLE MENU *** */
+      #menuToggleBtn {
+        display: none; /* Hidden by default on desktop */
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 11;
+        padding: 10px 12px;
+        background: rgba(80, 80, 120, 0.85);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: white;
+        border-radius: 8px;
+        font-size: 1.2em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+      #menuToggleBtn:hover {
+        background: rgba(100, 100, 160, 0.9);
+        border-color: rgba(255, 255, 255, 0.25);
+      }
+      /* ************************************* */
+
+      /* *** CSS UNTUK PANEL STATS (TOP RIGHT) *** */
+      #statsPanel {
+        position: absolute;
+        top: 70px;
+        right: 20px;
+        background: rgba(15, 15, 35, 0.85);
+        backdrop-filter: blur(10px);
+        padding: 12px 14px;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        min-width: 200px;
+        z-index: 10;
+      }
+      
+      .stat-item {
+        background: rgba(30, 30, 60, 0.6);
+        padding: 8px 10px;
+        border-radius: 8px;
+        border-left: 4px solid #5588dd;
+        font-size: 0.85em;
+        margin-bottom: 8px;
+      }
+      
+      .stat-item:last-child {
+        margin-bottom: 0;
+      }
+      
+      .stat-label {
+        color: #a0a0ff;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75em;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+      }
+      
+      .stat-value {
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 1.1em;
+      }
+      /* ***************************************** */
 
       @media (max-width: 768px) {
-        #ui {
-          left: 12px; top: 12px; width: min(420px, 94vw);
-          border-radius: 12px; padding: 12px 12px 10px;
-          max-height: calc(100vh - 24px);
+        /* Show menu toggle button on mobile */
+        #menuToggleBtn {
+          display: block;
         }
-        /* Posisikan tombol tema di HP */
-        #themeToggleBtn { top: 12px; right: 12px; }
+        
+        #ui {
+          left: 12px; top: 60px; width: min(420px, 94vw);
+          border-radius: 12px; padding: 12px 12px 10px;
+          max-height: calc(100vh - 72px);
+          transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        
+        /* Hidden state for mobile menu */
+        #ui.hidden {
+          transform: translateX(-110%);
+          opacity: 0;
+          pointer-events: none;
+        }
+        
+        /* Theme toggle positioning on mobile */
+        #themeToggleBtn {
+          top: 12px;
+          right: 12px;
+        }
+        
+        /* Stats panel positioning on mobile */
+        #statsPanel {
+          top: 60px;
+          right: 12px;
+          min-width: 160px;
+        }
+        
+        .stat-item {
+          font-size: 0.8em;
+          padding: 6px 8px;
+        }
+        
         .controls-grid { grid-template-columns: 1fr; }
         .btn-row { grid-template-columns: 1fr 1fr; }
         .chips-row, .info-row { grid-template-columns: 1fr 1fr; }
@@ -230,11 +330,48 @@
         #ui button { font-size: 0.9em; padding: 10px; }
         .controls-grid { grid-template-columns: 1fr; }
         .chips-row, .info-row { grid-template-columns: 1fr; }
+        
+        #statsPanel {
+          min-width: 140px;
+          padding: 10px;
+        }
+        
+        .stat-item {
+          font-size: 0.75em;
+          padding: 5px 7px;
+        }
+        
+        #themeToggleBtn {
+          padding: 6px 10px;
+          font-size: 0.85em;
+        }
       }
     </style>
   </head>
   <body>
-    <button id="themeToggleBtn">...</button> 
+    <button id="menuToggleBtn">☰</button>
+    <button id="themeToggleBtn">...</button>
+    
+    <!-- Stats Panel (Top Right) -->
+    <div id="statsPanel">
+      <div class="stat-item">
+        <div class="stat-label">Status</div>
+        <div class="stat-value" id="status">diam</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Kecepatan</div>
+        <div class="stat-value"><span id="currentSpeed">0.00</span> m/s</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Kerapatan</div>
+        <div class="stat-value"><span id="densityValue">1000.0</span> kg/m³</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">BC</div>
+        <div class="stat-value"><span id="bcValue">0.0</span> kg/m²</div>
+      </div>
+    </div>
+    
     <div id="ui">
       
       <div>
@@ -339,25 +476,11 @@
           />
         </div>
       </div>
-      <h4 class="ui-group-header">📈 Data Turunan</h4>
-      <div class="chips-row">
-        <div class="chip">
-          Kerapatan: <span id="densityValue">1000.0</span> kg/m³
-        </div>
-        <div class="chip">BC: <span id="bcValue">0.0</span> kg/m²</div>
-      </div>
 
       <h4 class="ui-group-header">⚙️ Kontrol</h4>
       <div class="btn-row">
         <button id="throwBtn">Lempar!</button>
         <button id="resetBtn">Reset</button>
-      </div>
-
-      <div class="info-row">
-        <div id="status" class="info-item">Status: diam</div>
-        <div id="currentSpeedDisplay" class="info-item">
-          Kecepatan: <span id="currentSpeed">0.00</span> m/s
-        </div>
       </div>
     </div>
 

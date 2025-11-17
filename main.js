@@ -97,6 +97,8 @@ window.addEventListener("DOMContentLoaded", () => {
   // --- Ambil Elemen UI dari HTML ---
   const ui = {
     container: document.getElementById("scene-container"),
+    panel: document.getElementById("ui"),
+    menuToggleBtn: document.getElementById("menuToggleBtn"),
     modelSelect: document.getElementById("modelSelect"),
     themeToggleBtn: document.getElementById("themeToggleBtn"),
     massSlider: document.getElementById("mass"),
@@ -558,7 +560,9 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
   function setStatus(text) {
-    ui.status.textContent = text;
+    // Remove "Status: " prefix if it exists since the label is separate now
+    const cleanText = text.replace(/^Status:\s*/i, '');
+    ui.status.textContent = cleanText;
   }
   
   // --- Fungsi Fisika (tetap sama) ---
@@ -947,6 +951,17 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // --- Setup Event Listeners (TETAP SAMA) ---
   function setupEventListeners() {
+    
+    // Menu toggle for mobile
+    if (ui.menuToggleBtn) {
+      ui.menuToggleBtn.addEventListener('click', () => {
+        if (ui.panel) {
+          ui.panel.classList.toggle('hidden');
+          // Change icon based on state
+          ui.menuToggleBtn.textContent = ui.panel.classList.contains('hidden') ? '☰' : '✕';
+        }
+      });
+    }
     
     if (ui.themeToggleBtn) {
       ui.themeToggleBtn.addEventListener('click', () => {
