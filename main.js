@@ -631,6 +631,18 @@ window.addEventListener("DOMContentLoaded", () => {
     velocity.addScaledVector(acceleration, delta);
     mesh.position.addScaledVector(velocity, delta);
     
+    // Safeguard: Buoyant objects cannot sink below equilibrium depth
+    if (rhoObject < rhoWater && inWater) {
+      // Calculate theoretical equilibrium depth for buoyant objects
+      const equilibriumSubmersion = rhoObject / rhoWater; // Fraction that should be submerged
+      const minY = surfaceY - (radius * equilibriumSubmersion * 2) + radius; // Minimum Y position
+      
+      if (mesh.position.y < minY) {
+        mesh.position.y = minY;
+        if (velocity.y < 0) velocity.y = 0; // Stop downward motion
+      }
+    }
+    
     // Fisika Dasar Laut (sudah diatur ke -20)
     const bottomLimit = -20 + radius;
 
@@ -653,11 +665,27 @@ window.addEventListener("DOMContentLoaded", () => {
       velocity.x = 0;
       velocity.z = 0;
     }
+    // Improved floating equilibrium logic
     if (statusText === "mengapung" && inWater) {
-      if (Math.abs(velocity.y) < 0.05 && Math.abs(acceleration.y) < 0.05) {
-        velocity.y = 0;
-        acceleration.y = 0;
-        mesh.position.y += F_total.y * 0.001;
+      // Calculate if object should be in equilibrium (buoyant)
+      const netForceY = F_total.y;
+      const isNearEquilibrium = Math.abs(velocity.y) < 0.3;
+      
+      if (isNearEquilibrium) {
+        // Dampen vertical motion strongly when near equilibrium
+        velocity.y *= 0.92;
+        
+        // If net force is pushing up (buoyant), maintain equilibrium
+        if (netForceY > 0) {
+          // Directly adjust position to maintain buoyancy without accumulating drift
+          const targetAdjustment = netForceY / (mass * 50); // Gentle position correction
+          mesh.position.y += targetAdjustment;
+          
+          // Lock velocity if very close to equilibrium
+          if (Math.abs(velocity.y) < 0.02) {
+            velocity.y = 0;
+          }
+        }
       }
     }
     mesh.position.z = 0;
