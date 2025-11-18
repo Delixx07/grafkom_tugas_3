@@ -29,7 +29,7 @@ const MODELS = {
   },
   ufo: {
     path: "./assets/ufo.glb", // PASTIKAN ANDA PUNYA FILE INI
-    scale: 3, // Anda mungkin perlu menyesuaikan skala ini
+    scale: 10, 
     rotationY: 0,
   },
 };
@@ -1427,4 +1427,5 @@ window.addEventListener("DOMContentLoaded", () => {
   updateMassUI();
   updateInitHeightUI();
   updateDerivedUI();
+
 });
