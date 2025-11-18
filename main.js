@@ -12,29 +12,58 @@ if (
 
 // *** Perpustakaan Model ***
 const MODELS = {
-  'duck': {
-    path: './assets/duck.glb',
+  duck: {
+    path: "./assets/duck.glb",
     scale: 8,
-    rotationY: Math.PI / 2 // Hadap kanan
+    rotationY: Math.PI / 2, // Hadap kanan
   },
-  'car': {
-    path: './assets/car.glb', // Anda menggunakan toy_car.glb di file, pastikan ini benar
+  car: {
+    path: "./assets/car.glb", // Anda menggunakan toy_car.glb di file, pastikan ini benar
     scale: 10,
-    rotationY: -Math.PI / 2 // Hadap kanan
+    rotationY: -Math.PI / 2, // Hadap kanan
   },
-  'sphere': {
+  sphere: {
     path: null, // path null berarti gunakan bola fisika
     scale: 1,
-    rotationY: 0
+    rotationY: 0,
   },
-  'ufo': {
-    path: './assets/ufo.glb', // PASTIKAN ANDA PUNYA FILE INI
+  ufo: {
+    path: "./assets/ufo.glb", // PASTIKAN ANDA PUNYA FILE INI
     scale: 3, // Anda mungkin perlu menyesuaikan skala ini
-    rotationY: 0
-  }
+    rotationY: 0,
+  },
 };
 // *****************************
 
+// *** UPGRADE: Konten untuk Info Fisika ***
+const PHYSICS_EXPLANATIONS = {
+  parabola: {
+    title: "🚀 Fisika Gerak Parabola",
+    content: `
+      <p>Gerak parabola (atau proyektil) terjadi ketika sebuah objek dilempar ke udara dan hanya dipengaruhi oleh <strong>gaya gravitasi</strong>.</p>
+      <p>Gerakannya bisa dipecah menjadi dua komponen:</p>
+      <ul>
+        <li><strong>Sumbu-X (Horizontal):</strong> Kecepatannya <strong>konstan</strong> (jika hambatan udara diabaikan) karena tidak ada gaya yang bekerja secara horizontal.</li>
+        <li><strong>Sumbu-Y (Vertikal):</strong> Kecepatannya <strong>berubah</strong> karena ada percepatan gravitasi (<code>g = -9.81 m/s²</code>) yang konstan menariknya ke bawah.</li>
+      </ul>
+      <p>Kombinasi dari gerak lurus horizontal dan gerak jatuh vertikal inilah yang menciptakan lintasan melengkung berbentuk parabola.</p>
+    `,
+  },
+  archimedes: {
+    title: "⚖️ Prinsip Archimedes (Gaya Apung)",
+    content: `
+      <p>Prinsip Archimedes menyatakan bahwa objek yang dicelupkan ke dalam fluida (cairan atau gas) akan mengalami <strong>gaya angkat ke atas (gaya apung)</strong>.</p>
+      <p>Besar gaya apung ini <strong>sama dengan berat fluida yang dipindahkan</strong> oleh objek tersebut.</p>
+      <p>Inilah yang menentukan apakah sebuah objek akan:</p>
+      <ul>
+        <li><strong>Mengapung:</strong> Jika massa jenis objek <strong>lebih kecil</strong> dari massa jenis fluida (gaya apung > berat objek).</li>
+        <li><strong>Melayang:</strong> Jika massa jenis objek <strong>sama dengan</strong> massa jenis fluida (gaya apung = berat objek).</li>
+        <li><strong>Tenggelam:</strong> Jika massa jenis objek <strong>lebih besar</strong> dari massa jenis fluida (gaya apung < berat objek).</li>
+      </ul>
+    `,
+  },
+};
+// ****************************************
 
 // Menunggu sampai semua HTML selesai dimuat
 window.addEventListener("DOMContentLoaded", () => {
@@ -50,11 +79,11 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // *** Variabel untuk Tekstur Pasir ***
   let sandColorTexture, sandNormalTexture;
-  
+
   // *** Variabel Tema & Cahaya ***
   let isNightMode = false; // Mulai dari mode malam
   let ambient, dir, rimLight; // Jadikan lampu global
-  
+
   // --- Variabel untuk Jalur Lintasan ---
   let pathPoints = [];
   let pathLine = null;
@@ -77,17 +106,22 @@ window.addEventListener("DOMContentLoaded", () => {
   const CdSphere = 0.47;
   const waterCurrent = new THREE.Vector3(0.25, 0.0, 0.0);
   const waves = {
-    amp1: 0.12, amp2: 0.07,
+    amp1: 0.12,
+    amp2: 0.07,
     dir1: new THREE.Vector2(1, 0).normalize(),
     dir2: new THREE.Vector2(0.3, 0.7).normalize(),
-    wl1: 6.0, wl2: 3.5,
-    sp1: 1.2, sp2: 0.8,
+    wl1: 6.0,
+    wl2: 3.5,
+    sp1: 1.2,
+    sp2: 0.8,
   };
   function waterSurfaceHeightAt(x, z, t) {
     const k1 = (2 * Math.PI) / waves.wl1;
     const k2 = (2 * Math.PI) / waves.wl2;
-    const phase1 = k1 * (waves.dir1.x * x + waves.dir1.y * z) - waves.sp1 * k1 * t;
-    const phase2 = k2 * (waves.dir2.x * x + waves.dir2.y * z) - waves.sp2 * k2 * t;
+    const phase1 =
+      k1 * (waves.dir1.x * x + waves.dir1.y * z) - waves.sp1 * k1 * t;
+    const phase2 =
+      k2 * (waves.dir2.x * x + waves.dir2.y * z) - waves.sp2 * k2 * t;
     return waves.amp1 * Math.sin(phase1) + waves.amp2 * Math.sin(phase2);
   }
   const g = -9.81;
@@ -97,6 +131,8 @@ window.addEventListener("DOMContentLoaded", () => {
   // --- Ambil Elemen UI dari HTML ---
   const ui = {
     container: document.getElementById("scene-container"),
+    panel: document.getElementById("ui"),
+    menuToggleBtn: document.getElementById("menuToggleBtn"),
     modelSelect: document.getElementById("modelSelect"),
     themeToggleBtn: document.getElementById("themeToggleBtn"),
     massSlider: document.getElementById("mass"),
@@ -123,10 +159,17 @@ window.addEventListener("DOMContentLoaded", () => {
     densityValue: document.getElementById("densityValue"),
     currentSpeed: document.getElementById("currentSpeed"),
     bcValue: document.getElementById("bcValue"),
+
+    // *** UPGRADE: Elemen Modal Info (Sesuai HTML Baru) ***
+    infoModal: document.getElementById("infoModal"),
+    modalTitle: document.getElementById("modalTitle"),
+    modalBody: document.getElementById("modalBody"),
+    modalCloseBtn: document.getElementById("modalCloseBtn"),
+    infoButtons: document.querySelectorAll(".ui-group-header[data-topic]"), // <-- PERUBAHAN DI SINI
   };
 
   // --- Variabel Kontrol (State) ---
-  let currentModelKey = ui.modelSelect.value; 
+  let currentModelKey = ui.modelSelect.value;
   let currentAngle = 45;
   let currentSpeed = 20;
   let currentMass =
@@ -155,7 +198,7 @@ window.addEventListener("DOMContentLoaded", () => {
     speed: 20,
     airDragScale: 1.0,
     airBuoyScale: 0.0,
-    model: 'sphere' // Default model
+    model: "sphere", // Default model
   };
 
   // --- (Fungsi helper UI tetap sama) ---
@@ -204,54 +247,53 @@ window.addEventListener("DOMContentLoaded", () => {
   }
   // **********************************
 
-  // *** Fungsi untuk mengubah tema (VERSI PERBAIKAN BUG KABUT) ***
+  // *** Fungsi untuk mengubah tema (VERSI PERBAIKAN BUG KABUT & CAHAYA) ***
   function setTheme(isNight) {
     if (isNight) {
       // --- Atur ke Malam ---
       scene.background.setHex(0x0a0a1a);
-      
+
       if (scene.fog) {
         scene.fog.color.setHex(0x0a0a1a); // Kabut jadi hitam
         scene.fog.near = 30;
         scene.fog.far = 150;
       }
-      
+
       // Lampu
-      ambient.intensity = 0.2;
+      ambient.intensity = 0.4; // <<< UPGRADE: Dinaikkan agar dasar laut terlihat
       dir.intensity = 0.3;
-      dir.color.setHex(0xbbccff); 
-      rimLight.intensity = 0.3; 
-      
+      dir.color.setHex(0xbbccff);
+      rimLight.intensity = 0.3;
+
       // Air
       if (water) {
         water.material.uniforms.sunColor.value.setHex(0xbbccff);
         water.material.uniforms.waterColor.value.setHex(0x0f5aa6); // Biru gelap
       }
-      
-      if (ui.themeToggleBtn) ui.themeToggleBtn.textContent = "Malam 🌙";
 
+      if (ui.themeToggleBtn) ui.themeToggleBtn.textContent = "Malam 🌙";
     } else {
       // --- Atur ke Siang ---
-      scene.background.setHex(0x87CEEB); // Langit biru
-      
+      scene.background.setHex(0x87ceeb); // Langit biru
+
       if (scene.fog) {
-        scene.fog.color.setHex(0x87CEEB); // <<< PERBAIKAN: Kabut jadi biru
+        scene.fog.color.setHex(0x87ceeb); // <<< PERBAIKAN: Kabut jadi biru
         scene.fog.near = 30;
         scene.fog.far = 150;
       }
-      
+
       // Lampu
       ambient.intensity = 0.6;
       dir.intensity = 1.0;
       dir.color.setHex(0xffffff);
-      rimLight.intensity = 0.1; 
-      
+      rimLight.intensity = 0.1;
+
       // Air
       if (water) {
         water.material.uniforms.sunColor.value.setHex(0xffffff);
-        water.material.uniforms.waterColor.value.setHex(0x3AAACF); // Biru lebih jernih
+        water.material.uniforms.waterColor.value.setHex(0x3aaacf); // Biru lebih jernih
       }
-      
+
       if (ui.themeToggleBtn) ui.themeToggleBtn.textContent = "Siang ☀️";
     }
   }
@@ -260,9 +302,9 @@ window.addEventListener("DOMContentLoaded", () => {
   // --- Fungsi Load Model (tetap sama) ---
   function loadModel(modelKey, onLoadedCallback) {
     if (!MODELS[modelKey]) {
-        console.error("Model key tidak ditemukan di MODELS:", modelKey);
-        if (onLoadedCallback) onLoadedCallback();
-        return;
+      console.error("Model key tidak ditemukan di MODELS:", modelKey);
+      if (onLoadedCallback) onLoadedCallback();
+      return;
     }
     const modelInfo = MODELS[modelKey];
     if (!modelInfo.path) {
@@ -271,13 +313,17 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     const loader = new THREE.GLTFLoader();
     loader.load(
-      modelInfo.path, 
+      modelInfo.path,
       function (gltf) {
         if (loadedModel) {
-            scene.remove(loadedModel);
+          scene.remove(loadedModel);
         }
         loadedModel = gltf.scene;
-        loadedModel.scale.set(modelInfo.scale, modelInfo.scale, modelInfo.scale); 
+        loadedModel.scale.set(
+          modelInfo.scale,
+          modelInfo.scale,
+          modelInfo.scale
+        );
         loadedModel.traverse(function (node) {
           if (node.isMesh) {
             node.castShadow = true;
@@ -288,14 +334,17 @@ window.addEventListener("DOMContentLoaded", () => {
       },
       undefined,
       function (error) {
-        console.error('Error memuat model 3D:', error);
-        alert('Gagal memuat file: ' + modelInfo.path + "\n\nPastikan file ada di folder /assets/ dan server sudah berjalan.");
+        console.error("Error memuat model 3D:", error);
+        alert(
+          "Gagal memuat file: " +
+            modelInfo.path +
+            "\n\nPastikan file ada di folder /assets/ dan server sudah berjalan."
+        );
         if (onLoadedCallback) onLoadedCallback();
       }
     );
   }
   // ****************************************************
-
 
   // --- Setup Awal Scene ---
   function init() {
@@ -313,6 +362,12 @@ window.addEventListener("DOMContentLoaded", () => {
     renderer = new THREE.WebGLRenderer({ antalias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
+
+    // *** UPGRADE: AKTIFKAN SHADOW MAP ***
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // (Opsional: bayangan lebih halus)
+    // *************************************
+
     ui.container.appendChild(renderer.domElement);
 
     // Kontrol Kamera
@@ -332,9 +387,9 @@ window.addEventListener("DOMContentLoaded", () => {
     rimLight = new THREE.DirectionalLight(0x4477ff, 0.3);
     rimLight.position.set(-5, 5, -5);
     scene.add(ambient, dir, rimLight);
-    
+
     // --- Ground, Grid, and Water (Blok yang Diperbarui) ---
-    
+
     // 1. Buat SATU texture loader
     const textureLoader = new THREE.TextureLoader();
 
@@ -346,42 +401,54 @@ window.addEventListener("DOMContentLoaded", () => {
       }
     );
 
-    // 3. Muat tekstur warna pasir
+    // 3. Muat tekstur WARNA pasir (LOKAL)
     sandColorTexture = textureLoader.load(
-      'https://threejs.org/examples/textures/terrain/sand-512.jpg',
+      "./assets/Ground093C_1K-PNG_Color.png", // <-- UPGRADE: FILE LOKAL
       undefined,
-      () => { console.warn("Gagal memuat sand_color.jpg dari URL"); }
+      () => {
+        console.warn("Gagal memuat tekstur Color");
+      }
     );
-    
     sandColorTexture.wrapS = THREE.RepeatWrapping;
     sandColorTexture.wrapT = THREE.RepeatWrapping;
     sandColorTexture.repeat.set(10, 10);
-    
-    // 4. Buat Material & Mesh Dasar Laut (Pasir)
-    // *** PERBAIKAN: Menggunakan MeshBasicMaterial agar selalu terlihat ***
-    sandNormalTexture = sharedWaterNormals; // (Kita tetap siapkan normal map-nya)
-    sandNormalTexture.repeat.copy(sandColorTexture.repeat);
-    
+
+    // 4. Muat tekstur NORMAL pasir (LOKAL)
+    sandNormalTexture = textureLoader.load(
+      "./assets/Ground093C_1K-PNG_NormalGL.png", // <-- UPGRADE: FILE LOKAL
+      undefined,
+      () => {
+        console.warn("Gagal memuat tekstur NormalGL");
+      }
+    );
+    // Samakan pengaturan repeat-nya agar pas
+    sandNormalTexture.wrapS = THREE.RepeatWrapping;
+    sandNormalTexture.wrapT = THREE.RepeatWrapping;
+    sandNormalTexture.repeat.set(10, 10);
+
+    // 5. Buat Material & Mesh Dasar Laut (Pasir)
     const groundGeo = new THREE.PlaneGeometry(500, 500);
-    const groundMat = new THREE.MeshBasicMaterial({ // <<< PERBAIKAN
-      map: sandColorTexture,      // Warna pasir
-      // normalMap: sandNormalTexture, // MeshBasicMaterial tidak pakai ini
+    const groundMat = new THREE.MeshStandardMaterial({ // <<< UPGRADE
+      map: sandColorTexture, // <-- Tekstur warna pasir
+      normalMap: sandNormalTexture, // <-- Tekstur normal pasir
+      roughness: 0.9, // Pasir itu kasar (tidak mengkilap)
+      metalness: 0.1,
     });
-    
+
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -20; // Kedalaman laut
-    ground.receiveShadow = true; // (tetap bisa menerima, walau tidak bereaksi)
+    ground.receiveShadow = true; // <-- PENTING! Ini sekarang akan berfungsi
     scene.add(ground);
 
-    // 5. Tambahkan Grid (tidak berubah)
+    // 6. Tambahkan Grid (tidak berubah)
     const gridHelper = new THREE.GridHelper(500, 50, 0xaaaaaa, 0xaaaaaa);
-    gridHelper.position.y = -19.9; 
+    gridHelper.position.y = -19.9;
     gridHelper.material.transparent = true;
     gridHelper.material.opacity = 0.25;
     scene.add(gridHelper);
 
-    // 6. Buat Tampilan Laut (tidak berubah)
+    // 7. Buat Tampilan Laut (tidak berubah)
     const waterGeo = new THREE.PlaneGeometry(500, 500);
     water = new THREE.Water(waterGeo, {
       textureWidth: 512,
@@ -401,7 +468,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     water.material.side = THREE.DoubleSide;
     scene.add(water);
-    
+
     // --- Akhir Blok yang Diperbarui ---
 
     // Jalur Sejarah
@@ -458,14 +525,14 @@ window.addEventListener("DOMContentLoaded", () => {
     const rho = mass / V;
     const color = getColorForDensity(rho);
     const geometry = new THREE.SphereGeometry(radius, 32, 32);
-    const isSphereVisible = (currentModelKey === 'sphere');
+    const isSphereVisible = currentModelKey === "sphere";
     const material = new THREE.MeshStandardMaterial({
       color: color,
       metalness: 0.6,
       roughness: 0.2,
       emissive: color,
       emissiveIntensity: 0.2,
-      visible: isSphereVisible
+      visible: isSphereVisible,
     });
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(0, currentInitHeight, 0);
@@ -480,13 +547,16 @@ window.addEventListener("DOMContentLoaded", () => {
     inWater = false;
     wasInWater = false;
     isThrown = false;
-    if(object) {
+    if (object) {
       object.mesh.position.set(0, currentInitHeight, 0);
       object.mesh.rotation.set(0, 0, 0);
     }
     if (loadedModel) {
       loadedModel.position.set(0, currentInitHeight, 0);
-      const initialRotation = (MODELS[currentModelKey] && MODELS[currentModelKey].rotationY) ? MODELS[currentModelKey].rotationY : 0;
+      const initialRotation =
+        MODELS[currentModelKey] && MODELS[currentModelKey].rotationY
+          ? MODELS[currentModelKey].rotationY
+          : 0;
       loadedModel.rotation.set(0, initialRotation, 0);
     }
     setStatus("Status: diam");
@@ -537,8 +607,15 @@ window.addEventListener("DOMContentLoaded", () => {
     for (let i = 0; i < 300; i++) {
       const F_g = new THREE.Vector3(0, g * simMass, 0);
       const speedSq = simVelocity.lengthSq();
-      const F_drag = simVelocity.clone().normalize().multiplyScalar(-k_drag_air * speedSq);
-      const F_b_air = new THREE.Vector3(0, rhoAir * simV * -g * airBuoyScale, 0);
+      const F_drag = simVelocity
+        .clone()
+        .normalize()
+        .multiplyScalar(-k_drag_air * speedSq);
+      const F_b_air = new THREE.Vector3(
+        0,
+        rhoAir * simV * -g * airBuoyScale,
+        0
+      );
       const F_total = F_g.add(F_drag).add(F_b_air);
       const simAcceleration = F_total.divideScalar(simMass);
       simVelocity.addScaledVector(simAcceleration, simDelta);
@@ -549,7 +626,8 @@ window.addEventListener("DOMContentLoaded", () => {
       }
     }
     predictionLine.geometry.dispose();
-    predictionLine.geometry = new THREE.BufferGeometry().setFromPoints(predictionPoints);
+    predictionLine.geometry =
+      new THREE.BufferGeometry().setFromPoints(predictionPoints);
     predictionLine.computeLineDistances();
   }
   function hidePredictionPath() {
@@ -558,12 +636,18 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
   function setStatus(text) {
-    ui.status.textContent = text;
+    // Remove "Status: " prefix if it exists since the label is separate now
+    const cleanText = text.replace(/^Status:\s*/i, "");
+    ui.status.textContent = cleanText;
   }
-  
+
   // --- Fungsi Fisika (tetap sama) ---
   function computeSubmerged(radius, centerY, surfaceY) {
-    const h = THREE.MathUtils.clamp(radius - (centerY - surfaceY), 0, 2 * radius);
+    const h = THREE.MathUtils.clamp(
+      radius - (centerY - surfaceY),
+      0,
+      2 * radius
+    );
     const V_sub = (Math.PI * h * h * (3 * radius - h)) / 3;
     const V_total = (4 / 3) * Math.PI * radius ** 3;
     return { V_sub, fraction: THREE.MathUtils.clamp(V_sub / V_total, 0, 1) };
@@ -572,18 +656,28 @@ window.addEventListener("DOMContentLoaded", () => {
     const { V_sub } = computeSubmerged(radius, centerY, surfaceY);
     return rhoWater * V_sub * -g;
   }
-  
-  // --- Fungsi Update Fisika (DENGAN TAMBAHAN) ---
+
+  // --- Fungsi Update Fisika (DENGAN UPGRADE EFEK) ---
   function updatePhysics(delta) {
-    if (!isThrown) { return; }
+    if (!isThrown) {
+      return;
+    }
     if (!object || !velocity) return;
     const { mesh, radius, mass } = object;
     const V_total = (4 / 3) * Math.PI * radius ** 3;
     const rhoObject = mass / V_total;
     let statusText = "di udara";
-    const surfaceY = waterSurfaceHeightAt(mesh.position.x, mesh.position.z, simTime);
+    const surfaceY = waterSurfaceHeightAt(
+      mesh.position.x,
+      mesh.position.z,
+      simTime
+    );
     const bottomOfBallY = mesh.position.y - radius;
-    if (bottomOfBallY <= surfaceY) { inWater = true; } else { inWater = false; }
+    if (bottomOfBallY <= surfaceY) {
+      inWater = true;
+    } else {
+      inWater = false;
+    }
     if (inWater) {
       if (rhoObject > rhoWater * 1.01) statusText = "tenggelam";
       else if (rhoObject < rhoWater * 0.99) statusText = "mengapung";
@@ -591,10 +685,22 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     setStatus("Status: " + statusText);
     let F_total = new THREE.Vector3(0, mass * g, 0);
+
     if (!wasInWater && inWater) {
-      const hitPos = new THREE.Vector3(mesh.position.x, surfaceY + 0.01, mesh.position.z);
+      const hitPos = new THREE.Vector3(
+        mesh.position.x,
+        surfaceY + 0.01,
+        mesh.position.z
+      );
       const impactSpeed = Math.max(0, -velocity.y);
-      triggerSplash(hitPos, impactSpeed, radius);
+
+      // *** UPGRADE: Ambil skala visual dari model ***
+      const modelInfo = MODELS[currentModelKey];
+      const visualScale =
+        modelInfo && modelInfo.scale ? modelInfo.scale : 1.0;
+
+      // Kirim 'visualScale' ke fungsi triggerSplash
+      triggerSplash(hitPos, impactSpeed, radius, visualScale);
     }
     if (inWater) {
       if (bottomOfBallY < surfaceY) {
@@ -603,7 +709,11 @@ window.addEventListener("DOMContentLoaded", () => {
       }
     }
     const A = Math.PI * radius * radius;
-    const { V_sub, fraction: f_sub } = computeSubmerged(radius, mesh.position.y, surfaceY);
+    const { V_sub, fraction: f_sub } = computeSubmerged(
+      radius,
+      mesh.position.y,
+      surfaceY
+    );
     const f_air = 1 - f_sub;
     const v_rel_water = velocity.clone();
     v_rel_water.x -= waterCurrent.x;
@@ -612,14 +722,26 @@ window.addEventListener("DOMContentLoaded", () => {
     if (velocity.lengthSq() > eps) {
       if (f_air > 0) {
         const v = velocity.length();
-        const Fd_air_mag = 0.5 * rhoAir * CdSphere * A * v * v * f_air * airDragScale;
+        const Fd_air_mag =
+          0.5 *
+          rhoAir *
+          CdSphere *
+          A *
+          v *
+          v *
+          f_air *
+          airDragScale;
         const Fd_air = velocity.clone().normalize().multiplyScalar(-Fd_air_mag);
         F_total.add(Fd_air);
       }
       if (f_sub > 0) {
         const vW = v_rel_water.length();
-        const Fd_water_mag = 0.5 * rhoWater * CdSphere * A * vW * vW * f_sub;
-        const Fd_water = v_rel_water.clone().normalize().multiplyScalar(-Fd_water_mag);
+        const Fd_water_mag =
+          0.5 * rhoWater * CdSphere * A * vW * vW * f_sub;
+        const Fd_water = v_rel_water
+          .clone()
+          .normalize()
+          .multiplyScalar(-Fd_water_mag);
         F_total.add(Fd_water);
       }
     }
@@ -630,21 +752,42 @@ window.addEventListener("DOMContentLoaded", () => {
     const acceleration = F_total.clone().divideScalar(mass);
     velocity.addScaledVector(acceleration, delta);
     mesh.position.addScaledVector(velocity, delta);
-    
+
+    // Safeguard: Buoyant objects cannot sink below equilibrium depth
+    if (rhoObject < rhoWater && inWater) {
+      // Calculate theoretical equilibrium depth for buoyant objects
+      const equilibriumSubmersion = rhoObject / rhoWater; // Fraction that should be submerged
+      const minY = surfaceY - radius * equilibriumSubmersion * 2 + radius; // Minimum Y position
+
+      if (mesh.position.y < minY) {
+        mesh.position.y = minY;
+        if (velocity.y < 0) velocity.y = 0; // Stop downward motion
+      }
+    }
+
     // Fisika Dasar Laut (sudah diatur ke -20)
     const bottomLimit = -20 + radius;
 
-    // *** BARU: Logika deteksi benturan dasar laut ***
+    // *** UPGRADE: Logika deteksi benturan dasar laut ***
     if (mesh.position.y < bottomLimit) {
       const impactSpeedY = Math.abs(velocity.y); // Cek kecepatan *sebelum* memantul
-      
+
       mesh.position.y = bottomLimit;
       velocity.y *= -0.3; // Memantul
       velocity.x *= 0.8;
-      
+
       // Hanya picu semburan jika benturan cukup keras
       if (impactSpeedY > 0.5) {
-        triggerSandPoof(new THREE.Vector3(mesh.position.x, bottomLimit + 0.1, mesh.position.z), impactSpeedY);
+        // *** UPGRADE: Ambil skala visual dari model ***
+        const modelInfo = MODELS[currentModelKey];
+        const visualScale =
+          modelInfo && modelInfo.scale ? modelInfo.scale : 1.0;
+
+        triggerSandPoof(
+          new THREE.Vector3(mesh.position.x, bottomLimit + 0.1, mesh.position.z),
+          impactSpeedY,
+          visualScale
+        );
       }
     }
     // ***********************************************
@@ -653,11 +796,27 @@ window.addEventListener("DOMContentLoaded", () => {
       velocity.x = 0;
       velocity.z = 0;
     }
+    // Improved floating equilibrium logic
     if (statusText === "mengapung" && inWater) {
-      if (Math.abs(velocity.y) < 0.05 && Math.abs(acceleration.y) < 0.05) {
-        velocity.y = 0;
-        acceleration.y = 0;
-        mesh.position.y += F_total.y * 0.001;
+      // Calculate if object should be in equilibrium (buoyant)
+      const netForceY = F_total.y;
+      const isNearEquilibrium = Math.abs(velocity.y) < 0.3;
+
+      if (isNearEquilibrium) {
+        // Dampen vertical motion strongly when near equilibrium
+        velocity.y *= 0.92;
+
+        // If net force is pushing up (buoyant), maintain equilibrium
+        if (netForceY > 0) {
+          // Directly adjust position to maintain buoyancy without accumulating drift
+          const targetAdjustment = netForceY / (mass * 50); // Gentle position correction
+          mesh.position.y += targetAdjustment;
+
+          // Lock velocity if very close to equilibrium
+          if (Math.abs(velocity.y) < 0.02) {
+            velocity.y = 0;
+          }
+        }
       }
     }
     mesh.position.z = 0;
@@ -665,26 +824,52 @@ window.addEventListener("DOMContentLoaded", () => {
     wasInWater = inWater;
   }
   // **********************************
-  
-  // --- (Fungsi Splash tetap sama) ---
-  function triggerSplash(position, impactSpeed, radius) {
+
+  // --- (Fungsi Splash dengan UPGRADE EFEK) ---
+  function triggerSplash(position, impactSpeed, radius, visualScale = 1.0) {
     const m = object ? object.mass : currentMass;
     const KE = 0.5 * m * impactSpeed * impactSpeed;
-    const intensity = THREE.MathUtils.clamp(Math.sqrt(KE) / 8 + radius * 1.5, 0.3, 5.0);
+
+    // *** UPGRADE: Hitung radius efektif berdasarkan skala visual ***
+    // 'radius' adalah radius fisika (selalu 0.3)
+    // 'visualScale' adalah pengali (1 untuk bola, 10 untuk mobil)
+    const effectiveRadius = radius * visualScale;
+
+    // Gunakan 'effectiveRadius' untuk intensitas. Naikkan juga batas max clamp!
+    const intensity = THREE.MathUtils.clamp(
+      Math.sqrt(KE) / 8 + effectiveRadius * 1.5,
+      0.3,
+      10.0
+    );
+
     createSplashRing(position, intensity);
-    spawnDroplets(position, impactSpeed, radius, m, KE, intensity);
+
+    // Kirim 'effectiveRadius' ke spawnDroplets, bukan 'radius'
+    spawnDroplets(position, impactSpeed, effectiveRadius, m, KE, intensity);
   }
+
   function createSplashRing(position, intensity) {
     const innerR = 0.2 * intensity;
     const outerR = 0.25 * intensity;
     const geo = new THREE.RingGeometry(innerR, outerR, 64);
-    const mat = new THREE.MeshBasicMaterial({ color: 0x8ec8ff, transparent: true, opacity: 0.9, depthWrite: false });
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0x8ec8ff,
+      transparent: true,
+      opacity: 0.9,
+      depthWrite: false,
+    });
     const ring = new THREE.Mesh(geo, mat);
     ring.rotation.x = -Math.PI / 2;
     ring.position.copy(position);
     ring.position.y += 0.01;
     scene.add(ring);
-    splashRings.push({ mesh: ring, elapsed: 0, duration: 1.2, startScale: 1, endScale: 5 * intensity });
+    splashRings.push({
+      mesh: ring,
+      elapsed: 0,
+      duration: 1.2,
+      startScale: 1,
+      endScale: 5 * intensity,
+    });
   }
   function updateSplashRings(delta) {
     for (let i = splashRings.length - 1; i >= 0; i--) {
@@ -704,27 +889,47 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
   function spawnDroplets(position, impactSpeed, radius, mass, KE, intensity) {
-    const count = THREE.MathUtils.clamp(Math.floor(20 + 0.02 * KE + radius * 120), 30, 400);
+    // *** UPGRADE: Naikkan batas atas partikel ***
+    const count = THREE.MathUtils.clamp(
+      Math.floor(20 + 0.02 * KE + radius * 120),
+      30,
+      2000
+    ); // 400 -> 2000
+
     const positions = new Float32Array(count * 3);
     const velocities = new Array(count);
     const baseSpeed = 1.0 + impactSpeed * 0.5 + intensity * 0.2;
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
       const rad = Math.random() * (0.15 + radius * 0.2);
-      const offset = new THREE.Vector3(Math.cos(angle) * rad, 0, Math.sin(angle) * rad);
+      const offset = new THREE.Vector3(
+        Math.cos(angle) * rad,
+        0,
+        Math.sin(angle) * rad
+      );
       const px = position.x + offset.x;
       const py = position.y + 0.02;
       const pz = position.z + offset.z;
       positions[i * 3 + 0] = px;
       positions[i * 3 + 1] = py;
       positions[i * 3 + 2] = pz;
-      const dir = new THREE.Vector3(Math.cos(angle), 0.8 + Math.random() * 0.4, Math.sin(angle)).normalize();
+      const dir = new THREE.Vector3(
+        Math.cos(angle),
+        0.8 + Math.random() * 0.4,
+        Math.sin(angle)
+      ).normalize();
       const speed = baseSpeed * (0.6 + Math.random() * 0.7);
       velocities[i] = dir.multiplyScalar(speed);
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    const mat = new THREE.PointsMaterial({ color: 0xaeddff, size: 0.05 + radius * 0.06, transparent: true, opacity: 0.95, depthWrite: false });
+    const mat = new THREE.PointsMaterial({
+      color: 0xaeddff,
+      size: 0.05 + radius * 0.06,
+      transparent: true,
+      opacity: 0.95,
+      depthWrite: false,
+    });
     const points = new THREE.Points(geo, mat);
     scene.add(points);
     dropletEmitters.push({ points, velocities, elapsed: 0, duration: 1.6 });
@@ -737,13 +942,17 @@ window.addEventListener("DOMContentLoaded", () => {
       const lifeT = emitter.elapsed / emitter.duration;
       const posAttr = emitter.points.geometry.getAttribute("position");
       const arr = posAttr.array;
-      for (let i = 0; i < emitter.velocities.length; i++) {
+      for (let i = 0; i < emitter.velocITIES.length; i++) {
         const idx = i * 3;
         emitter.velocities[i].y += gravity * delta * 0.7;
         arr[idx + 0] += emitter.velocities[i].x * delta;
         arr[idx + 1] += emitter.velocities[i].y * delta;
         arr[idx + 2] += emitter.velocities[i].z * delta;
-        const surf = waterSurfaceHeightAt(arr[idx + 0], arr[idx + 2], simTime);
+        const surf = waterSurfaceHeightAt(
+          arr[idx + 0],
+          arr[idx + 2],
+          simTime
+        );
         if (arr[idx + 1] <= surf) {
           arr[idx + 1] = -9999;
           emitter.velocities[i].set(0, 0, 0);
@@ -761,55 +970,78 @@ window.addEventListener("DOMContentLoaded", () => {
   }
   // **********************************
 
-  // *** BARU: Fungsi untuk Semburan Pasir ***
-  function triggerSandPoof(position, impactSpeed) {
-    const intensity = THREE.MathUtils.clamp(impactSpeed / 2, 1, 5);
-    spawnSandCloud(position, intensity);
+  // *** Fungsi Semburan Pasir (DENGAN UPGRADE EFEK & FISIKA v2) ***
+
+  // FUNGSI 1: triggerSandPoof
+  function triggerSandPoof(position, impactSpeed, visualScale = 1.0) {
+    // *** UPGRADE LOGIKA BARU v2 ***
+    // Intensitas sekarang HANYA berdasarkan kecepatan benturan
+    const speedIntensity = THREE.MathUtils.clamp(impactSpeed / 2, 0.5, 5.0);
+
+    // Teruskan KEDUA nilai ke spawnSandCloud
+    spawnSandCloud(position, speedIntensity, visualScale);
   }
 
-  function spawnSandCloud(position, intensity) {
-    const count = THREE.MathUtils.clamp(Math.floor(intensity * 50), 50, 200);
+  // FUNGSI 2: spawnSandCloud
+  function spawnSandCloud(position, speedIntensity, visualScale = 1.0) {
+    // *** UPGRADE LOGIKA BARU v2 ***
+
+    // 1. Hitung jumlah partikel DASAR berdasarkan skala
+    // (Bola: 50*1=50, Mobil: 50*10=500)
+    const baseCount = 50 * visualScale;
+
+    // 2. Jumlah total adalah (Jumlah Dasar * Intensitas Kecepatan)
+    const count = THREE.MathUtils.clamp(
+      Math.floor(baseCount * speedIntensity),
+      50, // Min 50 partikel
+      1000 // Max 1000 partikel
+    );
+
     const positions = new Float32Array(count * 3);
     const velocities = new Array(count);
-    const baseSpeed = 2.0 + intensity * 0.1;
+
+    // 3. Kecepatan semburan juga harus didasarkan pada intensitas kecepatan
+    const baseSpeed = 2.0 + speedIntensity * 0.5;
 
     for (let i = 0; i < count; i++) {
       const _idx = i * 3;
       // Mulai dari posisi benturan
       positions[_idx + 0] = position.x + (Math.random() - 0.5) * 0.1;
-      positions[_idx + 1] = position.y + (Math.random()) * 0.1;
+      positions[_idx + 1] = position.y + Math.random() * 0.1;
       positions[_idx + 2] = position.z + (Math.random() - 0.5) * 0.1;
-      
+
       // Kecepatan: menyebar ke samping dan sedikit ke atas
       const dir = new THREE.Vector3(
         (Math.random() - 0.5) * 2, // x
-        Math.random() * 0.6,        // y (selalu sedikit ke atas)
-        (Math.random() - 0.5) * 2  // z
+        Math.random() * 0.6, // y (selalu sedikit ke atas)
+        (Math.random() - 0.5) * 2 // z
       ).normalize();
       const speed = baseSpeed * (0.5 + Math.random() * 0.5);
       velocities[i] = dir.multiplyScalar(speed);
     }
-    
+
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     const mat = new THREE.PointsMaterial({
-      color: 0xAD956F, // Warna coklat pasir
+      color: 0xad956f, // Warna coklat pasir
       size: 0.5,
       transparent: true,
       opacity: 0.7,
-      depthWrite: false // Agar tidak bentrok dengan partikel lain
+      depthWrite: false, // Agar tidak bentrok dengan partikel lain
     });
-    
+
     const points = new THREE.Points(geo, mat);
     scene.add(points);
     // Simpan untuk dianimasikan, durasi lebih lama dari percikan air
     sandClouds.push({ points, velocities, elapsed: 0, duration: 2.5 });
   }
 
+  // FUNGSI 3: updateSandClouds
   function updateSandClouds(delta) {
-    // Fisika partikel pasir: melambat (drag) dan naik sedikit (lift)
-    const drag = 0.96; // 4% lebih lambat setiap frame
-    const lift = 0.0005; // Gaya angkat kecil
+    // *** UPGRADE FISIKA AIR ***
+    // Fisika partikel pasir di air: drag (hambatan) kuat & gravitasi (tenggelam)
+    const drag = 0.94; // Hambatan air lebih kuat (angka lebih kecil)
+    const gravity = -0.1; // Gravitasi kecil menarik pasir ke bawah
 
     for (let e = sandClouds.length - 1; e >= 0; e--) {
       const emitter = sandClouds[e];
@@ -820,15 +1052,22 @@ window.addEventListener("DOMContentLoaded", () => {
 
       for (let i = 0; i < emitter.velocities.length; i++) {
         const idx = i * 3;
-        
-        // Terapkan fisika pasir
-        emitter.velocities[i].multiplyScalar(drag);
-        emitter.velocities[i].y += lift;
+
+        // Terapkan fisika pasir di air
+        emitter.velocities[i].multiplyScalar(drag); // 1. Terapkan hambatan
+        emitter.velocities[i].y += gravity * delta; // 2. Terapkan gravitasi (tenggelam)
 
         // Gerakkan partikel
         arr[idx + 0] += emitter.velocities[i].x * delta;
         arr[idx + 1] += emitter.velocities[i].y * delta;
         arr[idx + 2] += emitter.velocities[i].z * delta;
+
+        // *** TAMBAHAN: Jaga agar tidak menembus dasar laut ***
+        if (arr[idx + 1] < -20.0) {
+          // -20.0 adalah posisi dasar laut
+          arr[idx + 1] = -20.0;
+          emitter.velocities[i].set(0, 0, 0); // Hentikan partikel
+        }
       }
       posAttr.needsUpdate = true;
       emitter.points.material.opacity = 0.7 * (1 - lifeT); // Pudar seiring waktu
@@ -844,7 +1083,6 @@ window.addEventListener("DOMContentLoaded", () => {
   }
   // ****************************************
 
-
   // --- Loop Animasi ---
   function animate() {
     animationId = requestAnimationFrame(animate);
@@ -855,10 +1093,10 @@ window.addEventListener("DOMContentLoaded", () => {
     if (sandColorTexture) {
       sandColorTexture.offset.x += delta * 0.005;
       sandColorTexture.offset.y += delta * 0.002;
-      
-      // Pastikan tekstur normal map bergerak bersamaan (jika ada)
-      // (Meskipun MeshBasicMaterial tidak menampilkannya, offset-nya tetap kita samakan)
-      if(sandNormalTexture) sandNormalTexture.offset.copy(sandColorTexture.offset);
+
+      // Pastikan tekstur normal map bergerak bersamaan
+      if (sandNormalTexture)
+        sandNormalTexture.offset.copy(sandColorTexture.offset);
     }
 
     if (object) {
@@ -870,7 +1108,10 @@ window.addEventListener("DOMContentLoaded", () => {
         loadedModel.position.copy(object.mesh.position);
         loadedModel.rotation.x = object.mesh.rotation.x;
         loadedModel.rotation.z = object.mesh.rotation.z;
-        const initialRotation = (MODELS[currentModelKey] && MODELS[currentModelKey].rotationY) ? MODELS[currentModelKey].rotationY : 0;
+        const initialRotation =
+          MODELS[currentModelKey] && MODELS[currentModelKey].rotationY
+            ? MODELS[currentModelKey].rotationY
+            : 0;
         loadedModel.rotation.y = object.mesh.rotation.y + initialRotation;
       }
 
@@ -878,7 +1119,9 @@ window.addEventListener("DOMContentLoaded", () => {
       if (isThrown) {
         controls.target.copy(object.mesh.position);
       } else {
-        const targetPos = loadedModel ? loadedModel.position : object.mesh.position;
+        const targetPos = loadedModel
+          ? loadedModel.position
+          : object.mesh.position;
         controls.target.copy(targetPos);
       }
 
@@ -886,13 +1129,12 @@ window.addEventListener("DOMContentLoaded", () => {
 
       // Rotasi bola fisika (tetap sama)
       if (isThrown && velocity.length() > 0.1) {
-        if (currentModelKey === 'sphere') {
+        if (currentModelKey === "sphere") {
           object.mesh.rotation.x += velocity.x * delta * 0.5;
           object.mesh.rotation.z -= velocity.y * delta * 0.5;
         } else {
-
-          object.mesh.rotation.x += delta * 1.5; 
-          object.mesh.rotation.y += delta * 0.8; 
+          object.mesh.rotation.x += delta * 1.5;
+          object.mesh.rotation.y += delta * 0.8;
           object.mesh.rotation.z += delta * 1.1;
         }
       }
@@ -917,27 +1159,54 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // --- Setup Event Listeners (TETAP SAMA) ---
+  // *** UPGRADE: Fungsi untuk membuka/menutup modal ***
+  function openInfoModal(topic) {
+    const info = PHYSICS_EXPLANATIONS[topic];
+    if (!info) return;
+
+    ui.modalTitle.textContent = info.title;
+    ui.modalBody.innerHTML = info.content;
+    ui.infoModal.classList.remove("hidden");
+  }
+
+  function closeInfoModal() {
+    ui.infoModal.classList.add("hidden");
+  }
+  // ***************************************************
+
+  // --- Setup Event Listeners ---
   function setupEventListeners() {
-    
-    if (ui.themeToggleBtn) {
-      ui.themeToggleBtn.addEventListener('click', () => {
-          isNightMode = !isNightMode;
-          setTheme(isNightMode);
+    // Menu toggle for mobile
+    if (ui.menuToggleBtn) {
+      ui.menuToggleBtn.addEventListener("click", () => {
+        if (ui.panel) {
+          ui.panel.classList.toggle("hidden");
+          // Change icon based on state
+          ui.menuToggleBtn.textContent = ui.panel.classList.contains("hidden")
+            ? "☰"
+            : "✕";
+        }
       });
     }
 
-    ui.modelSelect.addEventListener('change', () => {
-        currentModelKey = ui.modelSelect.value;
-        if (loadedModel) {
-            scene.remove(loadedModel);
-            loadedModel = null;
-        }
-        createObject();
-        loadModel(currentModelKey, () => {
-            resetPhysics();
-            updatePredictionPath();
-        });
+    if (ui.themeToggleBtn) {
+      ui.themeToggleBtn.addEventListener("click", () => {
+        isNightMode = !isNightMode;
+        setTheme(isNightMode);
+      });
+    }
+
+    ui.modelSelect.addEventListener("change", () => {
+      currentModelKey = ui.modelSelect.value;
+      if (loadedModel) {
+        scene.remove(loadedModel);
+        loadedModel = null;
+      }
+      createObject();
+      loadModel(currentModelKey, () => {
+        resetPhysics();
+        updatePredictionPath();
+      });
     });
 
     ui.angleSlider.addEventListener("input", (e) => {
@@ -957,21 +1226,23 @@ window.addEventListener("DOMContentLoaded", () => {
       updateDerivedUI();
       if (object) {
         object.mass = currentMass;
-        if (currentModelKey === 'sphere') updateObjectColor();
+        if (currentModelKey === "sphere") updateObjectColor();
       }
       updatePredictionPath();
     });
     if (ui.airDragScaleSlider) {
       ui.airDragScaleSlider.addEventListener("input", (e) => {
         airDragScale = Number(e.target.value);
-        if (ui.airDragScaleValue) ui.airDragScaleValue.textContent = airDragScale.toFixed(2);
+        if (ui.airDragScaleValue)
+          ui.airDragScaleValue.textContent = airDragScale.toFixed(2);
         updatePredictionPath();
       });
     }
     if (ui.airBuoyScaleSlider) {
       ui.airBuoyScaleSlider.addEventListener("input", (e) => {
         airBuoyScale = Number(e.target.value);
-        if (ui.airBuoyScaleValue) ui.airBuoyScaleValue.textContent = airBuoyScale.toFixed(2);
+        if (ui.airBuoyScaleValue)
+          ui.airBuoyScaleValue.textContent = airBuoyScale.toFixed(2);
         updatePredictionPath();
       });
     }
@@ -979,16 +1250,23 @@ window.addEventListener("DOMContentLoaded", () => {
       currentInitHeight = Number(e.target.value);
       ui.initHeightValue.textContent = currentInitHeight.toFixed(2);
       if (!isThrown && object) {
-        const prevTarget = controls ? controls.target.clone() : new THREE.Vector3();
-        const offset = camera && prevTarget ? camera.position.clone().sub(prevTarget) : new THREE.Vector3(0, 5, 12);
+        const prevTarget = controls
+          ? controls.target.clone()
+          : new THREE.Vector3();
+        const offset =
+          camera && prevTarget
+            ? camera.position.clone().sub(prevTarget)
+            : new THREE.Vector3(0, 5, 12);
         object.mesh.position.set(0, currentInitHeight, 0);
-        if(loadedModel) {
-            loadedModel.position.set(0, currentInitHeight, 0);
+        if (loadedModel) {
+          loadedModel.position.set(0, currentInitHeight, 0);
         }
         lastRecordedPos.set(0, currentInitHeight, 0);
         resetPath();
         if (controls && camera) {
-          const targetPos = loadedModel ? loadedModel.position : object.mesh.position;
+          const targetPos = loadedModel
+            ? loadedModel.position
+            : object.mesh.position;
           controls.target.copy(targetPos);
           camera.position.copy(targetPos.clone().add(offset));
           controls.update();
@@ -996,7 +1274,7 @@ window.addEventListener("DOMContentLoaded", () => {
       }
       updatePredictionPath();
     });
-    
+
     // --- (Tombol Reset Default tetap sama) ---
     if (ui.massResetBtn) {
       ui.massResetBtn.addEventListener("click", () => {
@@ -1007,7 +1285,7 @@ window.addEventListener("DOMContentLoaded", () => {
         updateDerivedUI();
         if (object) {
           object.mass = currentMass;
-          if (currentModelKey === 'sphere') updateObjectColor();
+          if (currentModelKey === "sphere") updateObjectColor();
         }
         updatePredictionPath();
       });
@@ -1015,19 +1293,28 @@ window.addEventListener("DOMContentLoaded", () => {
     if (ui.initHeightResetBtn) {
       ui.initHeightResetBtn.addEventListener("click", () => {
         currentInitHeight = defaults.initHeight;
-        if (ui.initHeightSlider) ui.initHeightSlider.value = String(currentInitHeight.toFixed(2));
-        if (ui.initHeightValue) ui.initHeightValue.textContent = currentInitHeight.toFixed(2);
+        if (ui.initHeightSlider)
+          ui.initHeightSlider.value = String(currentInitHeight.toFixed(2));
+        if (ui.initHeightValue)
+          ui.initHeightValue.textContent = currentInitHeight.toFixed(2);
         if (!isThrown && object) {
-          const prevTarget = controls ? controls.target.clone() : new THREE.Vector3();
-          const offset = camera && prevTarget ? camera.position.clone().sub(prevTarget) : new THREE.Vector3(0, 5, 12);
+          const prevTarget = controls
+            ? controls.target.clone()
+            : new THREE.Vector3();
+          const offset =
+            camera && prevTarget
+              ? camera.position.clone().sub(prevTarget)
+              : new THREE.Vector3(0, 5, 12);
           object.mesh.position.set(0, currentInitHeight, 0);
-          if(loadedModel) {
+          if (loadedModel) {
             loadedModel.position.set(0, currentInitHeight, 0);
           }
           lastRecordedPos.set(0, currentInitHeight, 0);
           resetPath();
           if (controls && camera) {
-            const targetPos = loadedModel ? loadedModel.position : object.mesh.position;
+            const targetPos = loadedModel
+              ? loadedModel.position
+              : object.mesh.position;
             controls.target.copy(targetPos);
             camera.position.copy(targetPos.clone().add(offset));
             controls.update();
@@ -1055,16 +1342,20 @@ window.addEventListener("DOMContentLoaded", () => {
     if (ui.airDragScaleResetBtn) {
       ui.airDragScaleResetBtn.addEventListener("click", () => {
         airDragScale = defaults.airDragScale;
-        if (ui.airDragScaleSlider) ui.airDragScaleSlider.value = String(airDragScale.toFixed(2));
-        if (ui.airDragScaleValue) ui.airDragScaleValue.textContent = airDragScale.toFixed(2);
+        if (ui.airDragScaleSlider)
+          ui.airDragScaleSlider.value = String(airDragScale.toFixed(2));
+        if (ui.airDragScaleValue)
+          ui.airDragScaleValue.textContent = airDragScale.toFixed(2);
         updatePredictionPath();
       });
     }
     if (ui.airBuoyScaleResetBtn) {
       ui.airBuoyScaleResetBtn.addEventListener("click", () => {
         airBuoyScale = defaults.airBuoyScale;
-        if (ui.airBuoyScaleSlider) ui.airBuoyScaleSlider.value = String(airBuoyScale.toFixed(2));
-        if (ui.airBuoyScaleValue) ui.airBuoyScaleValue.textContent = airBuoyScale.toFixed(2);
+        if (ui.airBuoyScaleSlider)
+          ui.airBuoyScaleSlider.value = String(airBuoyScale.toFixed(2));
+        if (ui.airBuoyScaleValue)
+          ui.airBuoyScaleValue.textContent = airBuoyScale.toFixed(2);
         updatePredictionPath();
       });
     }
@@ -1088,18 +1379,39 @@ window.addEventListener("DOMContentLoaded", () => {
       ui.modelSelect.value = defaults.model;
       currentModelKey = defaults.model;
       if (loadedModel) {
-          scene.remove(loadedModel);
-          loadedModel = null;
+        scene.remove(loadedModel);
+        loadedModel = null;
       }
       createObject();
       loadModel(currentModelKey, () => {
         resetPhysics();
         updatePredictionPath();
         camera.position.set(0, 5, 12);
-        const targetPos = loadedModel ? loadedModel.position : object.mesh.position;
+        const targetPos = loadedModel
+          ? loadedModel.position
+          : object.mesh.position;
         controls.target.copy(targetPos);
       });
     });
+
+    // *** UPGRADE: Event Listener untuk Modal Info (Sesuai HTML Baru) ***
+    ui.infoButtons.forEach((header) => { // <-- PERUBAHAN DI SINI
+      header.addEventListener("click", () => {
+        const topic = header.getAttribute("data-topic"); // <-- PERUBAHAN DI SINI
+        openInfoModal(topic);
+      });
+    });
+
+    ui.modalCloseBtn.addEventListener("click", closeInfoModal);
+
+    // Opsional: tutup modal jika klik di luar area konten
+    ui.infoModal.addEventListener("click", (e) => {
+      if (e.target === ui.infoModal) {
+        // Cek apakah yang diklik adalah backdrop
+        closeInfoModal();
+      }
+    });
+    // **********************************************
 
     // Handle Resize (tetap sama)
     window.addEventListener("resize", () => {
@@ -1115,4 +1427,4 @@ window.addEventListener("DOMContentLoaded", () => {
   updateMassUI();
   updateInitHeightUI();
   updateDerivedUI();
-}); 
+});
