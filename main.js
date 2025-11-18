@@ -160,12 +160,12 @@ window.addEventListener("DOMContentLoaded", () => {
     currentSpeed: document.getElementById("currentSpeed"),
     bcValue: document.getElementById("bcValue"),
 
-    // *** UPGRADE: Elemen Modal Info (Sesuai HTML Baru) ***
+    // *** UPGRADE: Elemen Modal Info ***
     infoModal: document.getElementById("infoModal"),
     modalTitle: document.getElementById("modalTitle"),
     modalBody: document.getElementById("modalBody"),
     modalCloseBtn: document.getElementById("modalCloseBtn"),
-    infoButtons: document.querySelectorAll(".ui-group-header[data-topic]"), // <-- PERUBAHAN DI SINI
+    infoButtons: document.querySelectorAll(".ui-group-header[data-topic]"), // Ambil SEMUA tombol info
   };
 
   // --- Variabel Kontrol (State) ---
@@ -942,7 +942,7 @@ window.addEventListener("DOMContentLoaded", () => {
       const lifeT = emitter.elapsed / emitter.duration;
       const posAttr = emitter.points.geometry.getAttribute("position");
       const arr = posAttr.array;
-      for (let i = 0; i < emitter.velocITIES.length; i++) {
+      for (let i = 0; i < emitter.velocities.length; i++) {
         const idx = i * 3;
         emitter.velocities[i].y += gravity * delta * 0.7;
         arr[idx + 0] += emitter.velocities[i].x * delta;
@@ -1394,10 +1394,10 @@ window.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    // *** UPGRADE: Event Listener untuk Modal Info (Sesuai HTML Baru) ***
-    ui.infoButtons.forEach((header) => { // <-- PERUBAHAN DI SINI
+    // *** UPGRADE: Event Listener untuk Modal Info ***
+    ui.infoButtons.forEach((header) => {
       header.addEventListener("click", () => {
-        const topic = header.getAttribute("data-topic"); // <-- PERUBAHAN DI SINI
+        const topic = header.getAttribute("data-topic");
         openInfoModal(topic);
       });
     });
